@@ -108,14 +108,10 @@ class App: CliktCommand() {
         val examples = parseFever(feverPath)
 
         println("Creating Wikipedia Index")
-        var i = 0
-        for (page in wikiPages) {
+        wikiPages.forEach { page ->
             for ((sentenceId, text) in page.sentences) {
-                addDoc(writer, page.title, text, sentenceId)
-            }
-            i += 1
-            if (i % 10000 == 0) {
-                println("N=$i / ${wikiPages.size}")
+                val doc = buildDoc(page.title, text, sentenceId)
+                writer.addDocument(doc)
             }
         }
         writer.close()
@@ -151,12 +147,12 @@ class App: CliktCommand() {
     }
 }
 
-fun addDoc(writer: IndexWriter, title: String, text: String, sentenceId: Int) {
+fun buildDoc(title: String, text: String, sentenceId: Int): Document {
     val doc = Document()
     doc.add(TextField("title", title, Field.Store.YES))
     doc.add(TextField("text", text, Field.Store.YES))
     doc.add(StoredField("sentence_id", sentenceId))
-    writer.addDocument(doc)
+    return doc
 }
 
 fun main(args: Array<String>) {
