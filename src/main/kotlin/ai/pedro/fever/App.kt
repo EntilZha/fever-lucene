@@ -108,6 +108,7 @@ class App: CliktCommand() {
         val examples = parseFever(feverPath)
 
         println("Creating Wikipedia Index")
+        // addDocument is thread safe, so parallelize
         wikiPages.parallelStream().forEach { page ->
             for ((sentenceId, text) in page.sentences) {
                 val doc = buildDoc(page.title, text, sentenceId)
@@ -117,13 +118,13 @@ class App: CliktCommand() {
         writer.close()
 
         println("Getting Wikipedia Predictions")
-        // Issue a Query
         val fields = arrayOf("title", "text")
         val reader = DirectoryReader.open(index)
         val searcher = IndexSearcher(reader)
         val nDocs = 100
         val json = Json(JsonConfiguration.Stable)
         val outWriter = File(outPath).bufferedWriter()
+        // write() is thread safe, so parallelize
         examples.parallelStream().forEach {
             val queryParser = MultiFieldQueryParser(fields, analyzer)
             val query = queryParser.parse(MultiFieldQueryParser.escape(it.claim))
@@ -136,6 +137,7 @@ class App: CliktCommand() {
                 val sentenceId = document.get("sentence_id").toInt()
                 exPreds.add(RetrievedDoc(title, sentenceId, text, doc.score))
             }
+            // Careful to write as a single string for thread safety
             val out = json.stringify(
                     LucenePrediction.serializer(),
                     LucenePrediction(it.id, exPreds)
@@ -143,7 +145,7 @@ class App: CliktCommand() {
             outWriter.write(out)
         }
         reader.close()
-        println("Done predicting, saving documents")
+        println("Done predicting and saving")
     }
 }
 
