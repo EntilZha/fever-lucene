@@ -108,7 +108,7 @@ class App: CliktCommand() {
         val examples = parseFever(feverPath)
 
         println("Creating Wikipedia Index")
-        wikiPages.forEach { page ->
+        wikiPages.parallelStream().forEach { page ->
             for ((sentenceId, text) in page.sentences) {
                 val doc = buildDoc(page.title, text, sentenceId)
                 writer.addDocument(doc)
