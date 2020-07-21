@@ -61,8 +61,9 @@ data class RetrievedDoc(
 )
 
 @Serializable
-data class LucenePredictions(
-        val documents: Map<Int, List<RetrievedDoc>>
+data class LucenePrediction(
+        val claim_id: Int,
+        val documents: List<RetrievedDoc>
 )
 
 
@@ -123,7 +124,9 @@ class App: CliktCommand() {
         val reader = DirectoryReader.open(index)
         val searcher = IndexSearcher(reader)
         val nDocs = 100
-        val predictions = examples.parallelStream().map {
+        val json = Json(JsonConfiguration.Stable)
+        val outWriter = File(outPath).bufferedWriter()
+        examples.parallelStream().forEach() {
             val queryParser = MultiFieldQueryParser(fields, analyzer)
             val query = queryParser.parse(MultiFieldQueryParser.escape(it.claim))
             val docs = searcher.search(query, nDocs)
@@ -135,14 +138,14 @@ class App: CliktCommand() {
                 val sentenceId = document.get("sentence_id").toInt()
                 exPreds.add(RetrievedDoc(title, sentenceId, text, doc.score))
             }
-            it.id to exPreds
-        }.toList().toMap()
+            val out = json.stringify(
+                    LucenePrediction.serializer(),
+                    LucenePrediction(it.id, exPreds)
+            ).plus("\n")
+            outWriter.write(out)
+        }
         reader.close()
         println("Done predicting, saving documents")
-        val lucenePredictions = LucenePredictions(predictions)
-        val json = Json(JsonConfiguration.Stable)
-        val jsonOut = json.stringify(LucenePredictions.serializer(), lucenePredictions)
-        File(outPath).writeText(jsonOut)
     }
 }
 
