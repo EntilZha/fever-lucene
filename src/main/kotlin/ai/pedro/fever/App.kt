@@ -145,6 +145,7 @@ class App: CliktCommand() {
             outWriter.write(out)
         }
         reader.close()
+        outWriter.close()
         println("Done predicting and saving")
     }
 }
