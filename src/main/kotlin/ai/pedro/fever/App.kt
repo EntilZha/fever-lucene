@@ -81,7 +81,9 @@ fun parseWikipedia(wikiPath: String): List<WikipediaPage> {
     val serializer = WikipediaPage.serializer()
     return File(wikiPath)
             .readLines()
+            .parallelStream()
             .map {line -> json.parse(serializer, line)}
+            .toList()
 }
 
 
@@ -126,7 +128,7 @@ class App: CliktCommand() {
         val nDocs = 100
         val json = Json(JsonConfiguration.Stable)
         val outWriter = File(outPath).bufferedWriter()
-        examples.parallelStream().forEach() {
+        examples.parallelStream().forEach {
             val queryParser = MultiFieldQueryParser(fields, analyzer)
             val query = queryParser.parse(MultiFieldQueryParser.escape(it.claim))
             val docs = searcher.search(query, nDocs)
